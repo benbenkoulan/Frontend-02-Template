@@ -1,0 +1,76 @@
+﻿1、首先什么是Event Loop？
+Event Loop是用户代理用来协调events、user interactions、scripting、rendering、network等行为的一种机制。JavaScript的并发模型就是基于此。
+
+2、了解Event Loop之前需要知道的？
+栈
+函数、script、模块执行时会形成一个栈帧（执行上下文）压入到栈中。
+
+堆
+用于存放对象类型变量的一块内存区域。
+
+队列
+JavaScript运行时用于存放待处理任务的队列，每次执行最先被加入队列中的任务。当开始执行任务时，会为其创建一个栈帧，压入到调用栈中，直到栈被清空之后该任务执行结束。
+
+
+3、伪代码来表示Event Loop
+while(queue.waitForTask()) {
+    queue.processNextTask();
+}
+在一个线程中，同步的去等待新的任务，有了任务就去依次出队列执行，像一个不休止的循环，一直在等待任务、处理任务。
+
+
+4、Event Loop中的一些概念
+Task
+一个的结构，这个结构包含steps、source、document、script evaluation enviornment setting object set。
+
+steps
+指定任务要完成的工作的一系列步骤。
+
+source
+指明任务的来源，用来给不同类型的任务分组。每一个task source会有一个特定的task queue。
+task的来源主要有以下几种：
+* 用户交互，例如click等事件回调。
+* 对DOM操作的反应，例如执行监听DOM更改时设置的回调。
+* 对网络活动的响应，例如获取资源成功或失败的回调。
+* 浏览历史的切换。
+* HTML解析，例如解析script元素并执行。
+* 其他任务的回调，比如promise的rejected或者fulfilled状态的回调。
+
+Document
+在浏览器环境中是全局的文档环境，如果是在iframe中的话则是iframe中的document。
+
+script evaluation environment setting object set
+一系列environment setting object。
+environment setting object 是一个environment（一个标识了执行环境的设置的对象），并且额外指定了realm、module map、document、API Base URL、Https State等信息。
+
+Browsing Context
+一个environment，只不过这个environment的document对象可以被用户访问
+
+5、关于Event Loop一些注意点
+* 当browsing context不为null的时候，document的状态就是fully active，这个时候任务就是可执行的。
+* 在Event loop中会有一个或多个task queue，但其实规范描述task queue本身并不是一个queue，而是一个ordered set，因为处理任务时会从被选择但task queue选取第一个可被执行的任务，而并非是第一个任务。
+* Event loop还会有一个microtask queue，microtask queue是一个由microtask组成的队列。而microtask本身就是一个task，具有上面说得task所有特征，只不过它是由queueMicrotask机制来入队列的。
+
+6、Event Loop Processing Model
+Event loop只要存在就会一直不断的运行着，并且有一套固定的步骤：
+1、 通过一定的方式（由用户代理实现）选择至少包含一个可执行任务的task queue。
+2、 将该task queue里最老的任务作为第一个可执行任务执行，并将其从中删除。
+3、 执行微任务，选取微任务队列最老的任务出队并执行，直到微任务队列为空。
+4、 清除Indexed Database的事务。
+5、 报告long task（执行时间超过50ms的任务）。
+6、 更新渲染
+    1 首先检查渲染时机（渲染时机受硬件显示刷新频率或者用户代理为了性能因素所做的一些节流等限制）。
+    2 响应resize事件
+    3 响应scroll事件
+    4 响应MediaQueryList事件
+    5 更新动画的运行状态以及将动画相关事件回调入队列
+    6 执行requestAnimationFrame回调
+    7 更新intersection observation，有需要将intersection observer task入队列
+    8 重新渲染
+
+7、总结
+Event Loop机制为像浏览器这样的环境（单线程）IO非阻塞式处理任务提供了基础，开发者也可以利用Event Loop来实现任务的合理调度。
+
+8、参考引用出处
+MDN - https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/EventLoop
+whatwg - https://html.spec.whatwg.org/multipage/webappapis.html#event-loops
