@@ -1,0 +1,239 @@
+<html>
+    <head>
+        <style>
+            #map {
+                display: flex;
+                flex-wrap: wrap;
+                width: 1000px;
+                height: 1000px;
+            }
+
+            .cell {
+                width: 10px;
+                height: 10px;
+                border: 1px solid #ffffff;
+                box-sizing: border-box;
+                background-color: #f0f0f0;
+            }
+        </style>
+    </head>
+
+    <body>
+        <button id="save">保存</button>
+        <button id="clear">清除</button>
+        <div id="map"></div>
+
+        <script>
+            let map = localStorage.getItem('map') ? JSON.parse(localStorage.getItem('map')) : Array(10000).fill(0);
+            const container = document.getElementById('map');
+
+            function render() {
+                container.innerHTML = '';
+                for (let y = 0;y < 100;y++) {
+                    for (let x = 0;x < 100;x++) {
+                        const cell = document.createElement('div');
+                        cell.classList.add('cell');
+
+                        if (map[100 * y + x] === 1) {
+                            cell.style.backgroundColor = 'black';
+                        }
+
+                        cell.addEventListener('mousemove', () => {
+                            if (isMouseDown) {
+                                console.log();
+                                map[100 * y + x] = isClear ? 0 : 1;
+                                cell.style.backgroundColor = isClear ? '' : 'black';
+                            }
+                        });
+
+                        container.appendChild(cell);
+                    }
+                }
+            }
+
+            let isMouseDown = false;
+            let isClear = false;
+
+            document.addEventListener('mousedown', (e) => {
+                isMouseDown = true;
+                if (e.which === 3) {
+                    isClear = true;
+                }
+            });
+
+            document.addEventListener('mouseup', () => {
+                isMouseDown = false;
+                isClear = false;
+            });
+
+            document.addEventListener('contextmenu', e => e.preventDefault());
+
+            document.getElementById('save').addEventListener('click', () => {
+                localStorage.setItem('map', JSON.stringify(map));
+            });
+
+            document.getElementById('clear').addEventListener('click', () => {
+                map = Array(10000).fill(0);
+                render();
+                localStorage.removeItem('map');
+            });
+
+            function sleep(delay) {
+                return new Promise(resovle => {
+                    setTimeout(resovle, delay);
+                });
+            }
+
+            class Sorted {
+                constructor(data, compare) {
+                    this.data = data.slice();
+                    this.compare = compare || ((a, b) => (a - b));
+                }
+
+                take() {
+                    let index = -1;
+                    let ret;
+                    for (let i = 0;i < this.data.length;i++) {
+                        console.log('--------test---------');
+                        if (index < 0 || this.compare(this.data[i], this.data[index]) < 0) {
+                            index = i;
+                            ret = this.data[i];
+                        }
+                    }
+                    this.data[index] = this.data[this.data.length - 1];
+                    this.data.pop();
+                    return ret;
+                }
+
+                give(n) {
+                    this.data.push(n);
+                }
+
+                get length() {
+                    return this.data.length;
+                }
+            }
+
+            class BinaryHeap {
+                constructor(data, compare) {
+                    this.data = data.slice();
+                    this.compare = compare || ((a, b) => (a - b));
+                }
+
+                down(index) {
+                    let parentIndex = index;
+                    let leftChildIndex = 2 * parentIndex + 1;
+                    let rightChildIndex = 2 * parentIndex + 2;
+                    let tempIndex;
+                    while (leftChildIndex < this.length) {
+                        console.log('--------test---------');
+                        if (rightChildIndex < this.length && this.compare(this.data[rightChildIndex], this.data[leftChildIndex]) < 0) {
+                            tempIndex = rightChildIndex;
+                        } else {
+                            tempIndex = leftChildIndex;
+                        }
+
+                        if (this.compare(this.data[parentIndex], this.data[tempIndex]) < 0) {
+                            break;
+                        }
+
+                        let temp = this.data[parentIndex];
+                        this.data[parentIndex] = this.data[tempIndex];
+                        this.data[tempIndex] = temp;
+
+                        parentIndex = tempIndex;
+                        leftChildIndex = 2 * parentIndex + 1;
+                        rightChildIndex = 2 * parentIndex + 2;
+                    } 
+                }
+
+                take() {
+                    // 跟节点是最近路径
+                    let min = this.data[0];
+                    // 将最后一个节点，并重新构建二叉堆
+                    this.data[0] = this.data[this.length - 1];
+                    this.data.pop();
+
+                    for (let i = (Math.floor(this.length / 2) -1);i >= 0;i--) {
+                        this.down(i);
+                    }
+
+                    return min;
+                }
+
+                insertAt(i, v) {
+                    this.data[i] = v;
+                    while (i >= 0 && Math.floor((i - 1) / 2) >= 0 && this.compare(v, this.data[Math.floor((i - 1) / 2)]) < 0) {
+                        this.data[i] = this.data[Math.floor((i - 1) / 2)];
+                        this.data[Math.floor((i - 1) / 2)] = v;
+                        i = Math.floor((i - 1) / 2);
+                    }
+                }
+
+                give(v) {
+                    this.insertAt(this.length, v);
+                }
+
+                get length() {
+                    return this.data.length;
+                }
+            }
+
+            async function findPath(map, start, end) {
+                container.children[100 * end[1] + end[0]].style.backgroundColor = 'red';
+                // const queue = new Sorted([start], (a, b) => distance(a) - distance(b));
+                const queue = new BinaryHeap([start], (a, b) => distance(a) - distance(b));
+
+                function distance(point) {
+                    try {
+                        return (point[0] - end[0]) ** 2 + (point[1] - end[1]) ** 2;
+                    } catch (e) {
+                        console.log('--------error------');
+                    }
+                }
+
+                async function insert(x, y, pre) {
+                    if (x < 0 || x >= 100 || y < 0 || y >= 100) {
+                        return;
+                    }
+
+                    if (map[100 * y + x]) {
+                        return;
+                    }
+
+                    await sleep(20);
+
+                    container.children[100 * y + x].style.backgroundColor = 'lightgreen';
+                    map[100 * y + x] = pre;
+                    queue.give([x, y]);
+                }
+                
+                while (queue.length) {
+                    let [x, y] = queue.take();
+                    if (x === end[0] && y === end[1]) {
+                        let path = [];
+                        while(x != start[0] || y != start[1]) {
+                            path.push(map[y * 100 + x]);
+                            [x, y] = map[y * 100 + x];
+                            container.children[100 * y + x].style.backgroundColor = 'yellow';
+                        }
+
+                        return path;
+                    }
+
+                    await insert(x - 1, y, [x, y]);
+                    await insert(x + 1, y, [x, y]);
+                    await insert(x, y - 1, [x, y]);
+                    await insert(x, y + 1, [x, y]);
+
+                    await insert(x - 1, y - 1, [x, y]);
+                    await insert(x + 1, y + 1, [x, y]);
+                    await insert(x - 1, y + 1, [x, y]);
+                    await insert(x + 1, y - 1, [x, y]);
+                }
+            }
+
+            render();            
+        </script>
+    </body>
+</html>

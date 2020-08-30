@@ -1,0 +1,223 @@
+<html>
+    <head>
+        <style>
+            #board {
+                width: 150px;
+                overflow: hidden;
+                text-align: center;
+            }
+
+            .chess-box {
+                float: left;
+                width: 50px;
+                height: 50px;
+                border: 1px solid #f0f0f0;
+                background-color: lightblue;
+                box-sizing: border-box;
+                line-height: 1;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="board"></div>
+        
+        <script>
+            const pattern = [
+                0, 0, 0,
+                0, 0, 0,
+                0, 0, 0,
+            ];
+
+            // const pattern = [
+            //     [
+            //         0, 1, 0,
+            //     ],
+            //     [
+            //         0, 2, 0,
+            //     ],
+            //     [
+            //         0, 0, 0,
+            //     ],
+            // ];
+
+            const boardEl = document.getElementById('board');
+
+            let color = 2;
+
+            function createChess(text) {
+                const el = document.createElement('p');
+                el.innerText = text;
+                return el;
+            }
+
+            function createChessBox(i, j) {
+                const div = document.createElement('div');
+                div.setAttribute('class', 'chess-box');
+                div.addEventListener('click', () => {
+                    if (pattern[3 * j + i] === 0) {
+                        pattern[3 * j + i] = color;
+                    }
+                    renderBoard();
+                    if (checkWin(pattern, color)) {
+                        alert(color === 2 ? '⭕⭕赢了！！✌️' : '❌❌赢了！！✌️');
+                    }
+                    color = 3 - color;
+                    if (winllWin(pattern, color)) {
+                        console.log(color === 2 ? '⭕⭕要赢了！！✌️' : '❌❌要赢了！！✌️');
+                    }
+                    const { point } = bestChoice(pattern, color);
+                    pattern[3 * point[1] + point[0]] = color;
+                    renderBoard();
+                });
+                return div;
+            }
+
+            function renderBoard() {
+                boardEl.innerHTML = '';
+                for (let i = 0;i < 3;i++) {
+                    for (let j = 0;j < 3;j++) {
+                        const box = createChessBox(i, j);
+                        if (pattern[3 * j + i] === 1) {
+                            const chess = createChess('❌');
+                            box.appendChild(chess);
+                        } else if (pattern[3 * j + i] === 2) {
+                            const chess = createChess('⭕');
+                            box.appendChild(chess);
+                        }
+                        boardEl.appendChild(box);
+                    }
+                }
+            }
+
+            function checkRow(pattern, color) {
+                for (let i = 0;i < 3;i++) {
+                    let win = true;
+                    for (let j = 0;j < 3;j++) {
+                        if (pattern[3 * j + i] !== color) {
+                            win = false;
+                            break;
+                        }
+                    }
+                    if (win) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function checkColumn(pattern, color) {
+                for (let i = 0;i < 3;i++) {
+                    let win = true;
+                    for (let j = 0;j < 3;j++) {
+                        if (pattern[3 * i + j] !== color) {
+                            win = false;
+                            break;
+                        }
+                    }
+                    if (win) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            function checkCross1(pattern, color) {
+                for (let i = 0;i < 3;i++) {
+                    for (let j = 0;j < 3;j++) {
+                        if (i === j) {
+                            if (pattern[3 * j + i] !== color) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            function checkCross2(pattern, color) {
+                for (let i = 0;i < 3;i++) {
+                    for (let j = 0;j < 3;j++) {
+                        if (i + j === 2) {
+                            if (pattern[3 * j + i] !== color) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            function checkWin(pattern, color) {
+                if (checkRow(pattern, color)) {
+                    return true;
+                }
+                if (checkColumn(pattern, color)) {
+                    return true;
+                }
+                if (checkCross1(pattern, color)) {
+                    return true;
+                }
+                if (checkCross2(pattern, color)) {
+                    return true;
+                }
+                return false;
+            }
+
+            function clone(pattern) {
+                return Object.create(pattern);
+            }
+
+            function winllWin(pattern, color) {
+                for (let i = 0;i < 3;i++) {
+                    for (let j = 0;j < 3;j++) {
+                        if (pattern[3 * j + i] !== 0) {
+                            continue;
+                        }
+                        const newPattern = clone(pattern);
+                        newPattern[3 * j + i] = color;
+                        if (checkWin(newPattern, color)) {
+                            return [i, j];
+                        }
+                    }
+                }
+                return null;
+            }
+
+            function bestChoice(pattern, color) {
+                let p;
+                if (p = winllWin(pattern, color)) {
+                    return {
+                        point: p,
+                        result: 1,
+                    };
+                }
+                
+                let result = -2;
+                let point = null;
+                for (let i = 0;i < 3;i++) {
+                    for (let j = 0;j < 3;j++) {
+                        if (pattern[3 * j + i] !== 0) {
+                            continue;
+                        }
+                        let tmp = clone(pattern);
+                        tmp[3 * j + i] = color;
+
+                        let r = bestChoice(tmp, 3 - color).result;
+
+                        if (-r > result) {
+                            result = -r;
+                            point = [i, j];
+                        }
+                    }
+                }
+
+                return {
+                    point,
+                    result: point ? result : 0,
+                };
+            }
+
+            renderBoard();
+        </script>
+    </body>
+</html>
