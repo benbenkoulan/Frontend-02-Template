@@ -1,0 +1,70 @@
+<input type="range" id="r" min=0 max=255 />
+<input type="range" id="g" min=0 max=255 />
+<input type="range" id="b" min=0 max=255 />
+
+<div id="box" style="width: 100px; height: 100px"></div>
+
+<script>
+    let object = {
+        r: 0,
+        g: 0,
+        b: 0,
+    };
+    let callbacks = new Map();
+    let reactivites = new Map();
+    let usedReactivities = [];
+
+    function effect(callback)  {
+        usedReactivities = [];
+        callback();
+        for (let usedReactivity of usedReactivities) {
+            if (!callbacks.has(usedReactivity[0])) {
+                callbacks.set(usedReactivity[0], new Map());
+            }
+            if (!callbacks.get(usedReactivity[0]).has(usedReactivity[1])) {
+                callbacks.get(usedReactivity[0]).set(usedReactivity[1], []);
+            }
+            callbacks.get(usedReactivity[0]).get(usedReactivity[1]).push(callback);
+        }
+    }
+
+    function reactive(obj) {
+        if (reactivites.has(obj)) {
+            return reactivites.get(obj);
+        }
+        let proxy = new Proxy(obj, {
+            get(target, property, receiver) {
+                usedReactivities.push([target, property]);
+                if (typeof target[property] === 'object') {
+                    return reactive(target[property]);
+                }
+                return target[property];
+            },
+            set(target, property, value) {
+                target[property] = value;
+                if (callbacks.has(target) && callbacks.get(target).has(property)) {
+                    for (let callback of callbacks.get(target).get(property)) {
+                        callback();
+                    }
+                }                    
+                return true;
+            }
+        });
+        reactivites.set(obj, proxy);
+        return proxy;
+    }
+
+    const proxy = reactive(object);
+    const r = document.getElementById('r');
+    const g = document.getElementById('g');
+    const b = document.getElementById('b');
+    const box = document.getElementById('box');
+
+    effect(() => {
+        box.style.backgroundColor = `rgb(${proxy.r}, ${proxy.g}, ${proxy.b})`;
+    });
+
+    r.addEventListener('change', e => proxy.r = e.target.value);
+    g.addEventListener('change', e => proxy.g = e.target.value);
+    b.addEventListener('change', e => proxy.b = e.target.value);
+</script>
