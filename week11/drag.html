@@ -1,0 +1,81 @@
+<html>
+    <body>
+        <div id="container">
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字文字
+            <div id="dragable" style="display: inline-block; width: 100px; height: 100px; background-color: #ff0000;"></div>
+        </div>
+
+        <script>
+            const dragable = document.getElementById('dragable');
+
+            let baseX = 0;
+            let baseY = 0;
+
+            dragable.addEventListener('mousedown', (e) => {
+                const startX = e.clientX - baseX;
+                const startY = e.clientY - baseY;
+
+                const mousemove = (e) => {
+                    const clientX = e.clientX;
+                    const clientY = e.clientY;
+
+                    const nearst = getNearest(clientX, clientY);
+                    nearst.insertNode(dragable);
+                    // dragable.style.transform = `translate(${clientX - startX}px, ${clientY - startY}px)`;
+                    baseX = clientX - startX;
+                    baseY = clientY - startY;
+                };
+
+                const mouseup = (e) => {
+                    document.removeEventListener('mousemove', mousemove);
+                    document.removeEventListener('mouseup', mouseup);
+                };
+
+                document.addEventListener('mousemove', mousemove);
+                document.addEventListener('mouseup', mouseup);
+            });
+
+            const ranges = [];
+            const container = document.getElementById('container');
+            for (let i = 0;i < container.childNodes[0].textContent.length;i++) {
+                const range = document.createRange();
+                range.setStart(container.childNodes[0], i);
+                range.setEnd(container.childNodes[0], i);
+                console.log(range.getBoundingClientRect());
+                ranges.push(range);
+            }
+
+            function getNearest(x, y) {
+                let min = Infinity;
+                let nearest = null;
+                for (let i = 0;i <ranges.length;i++) {
+                    const range = ranges[i];
+                    const rect = range.getBoundingClientRect();
+                    const distance = (rect.x - x) ** 2 + (rect.y - y) ** 2;
+                    if (distance < min) {
+                        min = distance;
+                        nearest = range;
+                    }
+                }
+                return nearest;
+            }
+
+            document.addEventListener('selectstart', e => e.preventDefault());
+        </script>
+    </body>
+</html>
