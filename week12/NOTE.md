@@ -1,1 +1,2 @@
-学习笔记
+这周学习组件的基本概念，以及组件的相关基本概念（attribute、property、state、methods、children、config、event、lifecycle），又练习了解析通过babel将jsx代码编译成递归函数调用生成DOM。
+最后跟着老师学习了如何去封装一个轮播组件。
